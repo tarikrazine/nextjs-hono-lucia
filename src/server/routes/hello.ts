@@ -1,16 +1,16 @@
 import { Hono } from "hono";
-import { env } from "hono/adapter";
 
 import { Bindings } from "../index";
+import { serverEnvs } from "@/env/server";
 
 const helloRoute = new Hono<{ Bindings: Bindings }>();
 
 helloRoute.get(
   "/",
   (c) => {
-    const { DATABASE_URL } = env(c);
+    console.log("🟢 database from env: ", serverEnvs.DATABASE_URL);
 
-    return c.json<{ var: string }>({ var: DATABASE_URL });
+    return c.json<{ var: string }>({ var: serverEnvs.DATABASE_URL });
   },
 );
 

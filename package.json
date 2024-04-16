@@ -10,21 +10,30 @@
     "pages:build": "bunx @cloudflare/next-on-pages",
     "preview": "bun pages:build && wrangler pages dev .vercel/output/static",
     "deploy": "bun pages:build && wrangler pages deploy .vercel/output/static",
-    "build-cf-types": "wrangler types --env-interface CloudflareEnv env.d.ts"
+    "build-cf-types": "wrangler types --env-interface CloudflareEnv env.d.ts",
+    "drizzle:migrations": "drizzle-kit generate:pg",
+    "drizzle:studio": "drizzle-kit studio",
+    "migrate": "dotenv tsx ./src/lib/db/migrate.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
     "@libsql/client": "^0.6.0",
+    "@t3-oss/env-nextjs": "^0.9.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "dotenv": "^16.4.5",
     "drizzle-orm": "^0.30.8",
     "hono": "^4.2.4",
+    "jiti": "^1.21.0",
+    "lucia": "^3.1.1",
     "lucide-react": "^0.368.0",
     "next": "14.1.0",
+    "oslo": "^1.2.0",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.7.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
