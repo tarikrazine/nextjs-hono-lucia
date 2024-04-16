@@ -1,6 +1,32 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useState } from "react";
+
+async function fetchData() {
+  const response = await fetch("https://hono-nextjs.pages.dev/api/hello");
+  const data = await response.json();
+
+  return data;
+}
 
 export default function Home() {
+  const [data, setData] = useState<string>("");
+
+  useEffect(() => {
+    async function fetchData() {
+      const response = await fetch("https://hono-nextjs.pages.dev/api/hello");
+      const dataRes = (await response.json()) as string;
+
+      setData(dataRes);
+    }
+
+    fetchData();
+
+    return () => {};
+  }, []);
+
+  console.log(data);
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
