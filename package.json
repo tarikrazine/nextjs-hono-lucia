@@ -13,7 +13,7 @@
     "build-cf-types": "wrangler types --env-interface CloudflareEnv env.d.ts",
     "drizzle:migrations": "drizzle-kit generate:pg",
     "drizzle:studio": "drizzle-kit studio",
-    "migrate": "dotenv tsx ./src/lib/db/migrate.ts"
+    "migrate": "tsx ./src/lib/db/migrate.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.1",
