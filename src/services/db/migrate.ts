@@ -15,7 +15,7 @@ async function main() {
 
     console.log("🟠 Running migrations");
 
-    await migrate(db, { migrationsFolder: "./src/migrations" });
+    await migrate(db, { migrationsFolder: "./src/services/db/migrations" });
 
     console.log("🟢 Migrated successfully");
 

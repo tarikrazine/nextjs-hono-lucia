@@ -1,12 +1,13 @@
-import "dotenv/config";
 import type { Config } from "drizzle-kit";
+
+import { serverEnvs } from "@/env/server";
 
 export default {
   driver: "turso",
-  schema: "./src/lib/db/schema/*",
-  out: "./src/lib/db/migrations",
+  schema: "./src/services/db/schema/*",
+  out: "./src/services/db/migrations",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: serverEnvs.DATABASE_URL,
   },
   // Print all statements
   verbose: true,

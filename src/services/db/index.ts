@@ -1,11 +1,10 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
+
 import { serverEnvs } from "@/env/server";
 
-export interface Env {
-  DATABASE_URL: string;
-  DATABASE_AUTH_TOKEN?: string;
-}
+import * as users from "./schema/users";
+import * as sessions from "./schema/sessions";
 
 const client = createClient({
   url: serverEnvs.DATABASE_URL,
@@ -14,6 +13,6 @@ const client = createClient({
     : undefined,
 });
 
-const db = drizzle(client);
+const db = drizzle(client, { schema: { ...users, ...sessions } });
 
 export default db;

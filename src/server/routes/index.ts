@@ -1,11 +1,9 @@
 import { Hono } from "hono";
 
-import helloRoute from "./hello";
-import hello2Route from "./hello2";
+import authRoutes from "./auth/register";
 
 const routes = new Hono();
 
-routes.route("/hello", helloRoute);
-routes.route("/hello2", hello2Route);
+routes.route("/auth", authRoutes);
 
 export default routes;
