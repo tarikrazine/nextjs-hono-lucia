@@ -1,18 +1,74 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 
 import { RegisterSchema } from "@/schemas/registerSchema";
+import { ContextVariables } from "@/services/types";
 
-const authRegister = new Hono();
+const app = new OpenAPIHono<{ Variables: ContextVariables }>({});
 
-authRegister.post(
-  "/",
-  zValidator("form", RegisterSchema.omit({ passwordConfirmation: true })),
-  (c) => {
-    const { email, password } = c.req.valid("form");
-
-    return c.json({ email, password }, 201);
+const registerRoute = createRoute({
+  method: "post",
+  path: "/",
+  summary: "Register a new user",
+  tags: ["Auth"],
+  body: RegisterSchema,
+  request: {
+    body: {
+      description: "Request body",
+      content: {
+        "application/json": {
+          schema: RegisterSchema.openapi("RegisterUser", {
+            example: {
+              email: "email@example.com",
+              password: "password123",
+              passwordConfirmation: "password123",
+            },
+          }),
+        },
+      },
+    },
   },
-);
+  responses: {
+    201: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.string(),
+          }),
+        },
+      },
+      description: "Retrieve the user",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: "Returns an error",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            error: z.string(),
+          }),
+        },
+      },
+      description: "Internal server error",
+    },
+  },
+});
 
-export default authRegister;
+app.openapi(registerRoute, async (c) => {
+  const { email, password } = c.req.valid("json");
+
+  const user = c.get("user");
+
+  console.log(user);
+
+  return c.json({ success: "User registered successfully" });
+});
+
+export default app;

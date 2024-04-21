@@ -16,6 +16,8 @@
     "migrate": "tsx ./src/services/db/migrate.ts"
   },
   "dependencies": {
+    "@hono/swagger-ui": "^0.2.1",
+    "@hono/zod-openapi": "^0.11.0",
     "@hono/zod-validator": "^0.2.1",
     "@hookform/resolvers": "^3.3.4",
     "@libsql/client": "^0.6.0",
@@ -50,7 +52,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
-    "drizzle-kit": "^0.20.16",
+    "drizzle-kit": "^0.20.17",
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
     "postcss": "^8",

@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { z } from "@hono/zod-openapi";
 
-export const RegisterSchema = z.object(
-  {
+export const RegisterSchema = z
+  .object({
     email: z.string().email(),
     password: z.string().min(3, {
       message: "Password must be at least 3 characters long",
@@ -9,10 +9,11 @@ export const RegisterSchema = z.object(
     passwordConfirmation: z.string().min(3, {
       message: "Password confirmation must be at least 3 characters long",
     }),
-  },
-).refine((data) => data.password === data.passwordConfirmation, {
-  message: "Passwords must match",
-  path: ["passwordConfirmation"],
-});
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "Passwords must match",
+    path: ["passwordConfirmation"],
+  })
+  .openapi("RegisterUser");
 
 export type RegisterSchemaType = z.infer<typeof RegisterSchema>;

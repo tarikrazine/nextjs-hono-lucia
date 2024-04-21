@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { client } from "@/server/client";
 
 function RegisterForm() {
+  const $post = client.api.auth.register.$post;
+
   const { mutate, isPending } = useMutation<
     unknown,
     Error,
@@ -31,11 +33,25 @@ function RegisterForm() {
     mutationFn: async (input) => {
       console.log(input);
 
-      // const response = await client
+      const response = await $post({
+        form: {
+          ...input,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(response.status);
+      }
+
+      return response.json();
     },
-    onSuccess: (_, { email }) => {},
-    onError: () => {
+    onSuccess: (_, { email }) => {
+      //   toast.success("Verification code sent");
+      console.log("success 🟢: ", email);
+    },
+    onError: (error) => {
       //   toast.error("Failed to send verification code");
+      console.log("error 🔴: ", error);
     },
   });
 
@@ -50,7 +66,10 @@ function RegisterForm() {
 
   return (
     <Form {...form}>
-      <form className="space-y-6">
+      <form
+        className="space-y-6"
+        onSubmit={form.handleSubmit((values) => mutate(values))}
+      >
         <div className="space-y-4">
           <FormField
             control={form.control}

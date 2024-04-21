@@ -1,8 +1,10 @@
-import { Hono } from "hono";
-import authRegister from "./register";
+import { OpenAPIHono } from "@hono/zod-openapi";
 
-const authRoutes = new Hono();
+import registerRoute from "./register";
+import { ContextVariables } from "@/services/types";
 
-authRoutes.route("/register", authRegister);
+const authApp = new OpenAPIHono<{ Variables: ContextVariables }>();
 
-export default authRoutes;
+authApp.route("/register", registerRoute);
+
+export default authApp;
