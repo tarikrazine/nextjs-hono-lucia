@@ -19,9 +19,12 @@ import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
 import { client } from "@/server/client";
+import { useRouter } from "next/navigation";
 
 function RegisterForm() {
-  const $post = client.api.auth.register.$post;
+  const router = useRouter()
+  
+  const $post = (client as any).api.auth.register.$post;
 
   const { mutate, isPending } = useMutation<
     unknown,
@@ -34,20 +37,22 @@ function RegisterForm() {
       console.log(input);
 
       const response = await $post({
-        form: {
+        json: {
           ...input,
         },
       });
 
       if (!response.ok) {
-        throw new Error(response.status);
+        throw new Error(response);
       }
 
-      return response.json();
+      return await response.json();
     },
     onSuccess: (_, { email }) => {
       //   toast.success("Verification code sent");
       console.log("success 🟢: ", email);
+      form.reset();
+      // router.push("/login")  
     },
     onError: (error) => {
       //   toast.error("Failed to send verification code");
@@ -81,6 +86,7 @@ function RegisterForm() {
                   <Input
                     type="email"
                     placeholder="john@example.com"
+                    disabled={isPending}
                     {...field}
                   />
                 </FormControl>
@@ -95,7 +101,12 @@ function RegisterForm() {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="********" {...field} />
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    disabled={isPending}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -108,7 +119,12 @@ function RegisterForm() {
               <FormItem>
                 <FormLabel>Password Confirmation</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="********" {...field} />
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    disabled={isPending}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -118,11 +134,11 @@ function RegisterForm() {
         <Button type="submit">
           <Loader2
             className={cn("mr-2 size-4 animate-spin", {
-              [`inline`]: false,
-              [`hidden`]: true,
+              [`inline`]: isPending,
+              [`hidden`]: !isPending,
             })}
           />
-          Continue
+          Register
         </Button>
       </form>
     </Form>
@@ -130,3 +146,7 @@ function RegisterForm() {
 }
 
 export default RegisterForm;
+
+
+
+

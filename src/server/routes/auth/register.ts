@@ -1,15 +1,19 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { setCookie } from "hono/cookie";
+import { generateId, Scrypt } from "lucia";
 
 import { RegisterSchema } from "@/schemas/registerSchema";
 import { ContextVariables } from "@/services/types";
+import { users } from "@/services/db/schema/users";
+import { lucia } from "@/services/auth";
 
-const app = new OpenAPIHono<{ Variables: ContextVariables }>({});
+const app = new OpenAPIHono<{ Variables: ContextVariables }>();
 
 const registerRoute = createRoute({
   method: "post",
   path: "/",
   summary: "Register a new user",
-  tags: ["Auth"],
+  tags: ["Register"],
   body: RegisterSchema,
   request: {
     body: {
@@ -64,11 +68,33 @@ const registerRoute = createRoute({
 app.openapi(registerRoute, async (c) => {
   const { email, password } = c.req.valid("json");
 
-  const user = c.get("user");
+  const db = c.get("db");
 
-  console.log(user);
+  const hashedPassword = await new Scrypt().hash(password);
+  const userId = generateId(15);
 
-  return c.json({ success: "User registered successfully" });
+  try {
+    const [newUser] = await db.insert(users).values({
+      email,
+      hashedPassword,
+      id: userId,
+    }).returning({ id: users.id, email: users.email });
+
+    const session = await lucia.createSession(newUser.id, { id: userId });
+
+    const sessionCookie = lucia.createSessionCookie(session.id);
+
+    setCookie(c, lucia.sessionCookieName, sessionCookie.serialize(), {
+      ...sessionCookie.attributes,
+      sameSite: "Strict",
+    });
+
+    return c.json({ success: "User registered successfully" }, 201);
+  } catch (error: any) {
+    console.log("[ERROR_REGISTER_ROUTE]: ", error);
+
+    return c.json({ error: error?.message }, 400);
+  }
 });
 
 export default app;

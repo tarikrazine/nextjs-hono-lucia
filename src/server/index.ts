@@ -1,6 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { logger } from "hono/logger";
 import { getCookie, setCookie } from "hono/cookie";
+import { verifyRequestOrigin } from "lucia";
 
 import authApp from "./routes/auth";
 import { lucia } from "@/services/auth";
@@ -9,7 +10,27 @@ import { ContextVariables } from "@/services/types";
 
 const app = new OpenAPIHono<{ Variables: ContextVariables }>().basePath("/api");
 
-app.use(async (c, next) => {
+app.use("*", async (c, next) => {
+  if (c.req.method === "GET") {
+    return next();
+  }
+
+  const originHeader = c.req.header("Origin");
+
+  const hostHeader = c.req.header("Host");
+
+  if (
+    !originHeader ||
+    !hostHeader ||
+    !verifyRequestOrigin(originHeader, [hostHeader])
+  ) {
+    return c.body(null, 403);
+  }
+
+  return next();
+});
+
+app.use("*", async (c, next) => {
   c.set("db", db);
 
   const sessionId = getCookie(c, lucia.sessionCookieName);
@@ -40,6 +61,8 @@ app.use(async (c, next) => {
 
   c.set("user", user);
   c.set("session", session);
+
+  console.log("user 🟢", user);
   return next();
 });
 

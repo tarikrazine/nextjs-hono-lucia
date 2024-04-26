@@ -1,9 +1,13 @@
-import Image from "next/image";
+import { getUser } from "@/lib/user.server";
 
-export default function Home() {
+export const runtime = 'edge';
+
+export default async function Home() {
+  const user = await getUser()
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      Marketing page
+      {JSON.stringify(user, null, 2)}
     </main>
   );
 }
