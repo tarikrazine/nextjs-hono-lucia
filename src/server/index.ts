@@ -45,24 +45,22 @@ app.use("*", async (c, next) => {
 
   if (session && session.fresh) {
     const sessionCookie = lucia.createSessionCookie(session.id);
-    setCookie(c, lucia.sessionCookieName, sessionCookie.serialize(), {
-      ...sessionCookie.attributes,
-      sameSite: "Strict",
+
+    c.header("Set-Cookie", sessionCookie.serialize(), {
+      append: true,
     });
   }
 
   if (!session) {
     const sessionCookie = lucia.createBlankSessionCookie();
-    setCookie(c, lucia.sessionCookieName, sessionCookie.serialize(), {
-      ...sessionCookie.attributes,
-      sameSite: "Strict",
+    c.header("Set-Cookie", sessionCookie.serialize(), {
+      append: true,
     });
   }
 
   c.set("user", user);
   c.set("session", session);
 
-  console.log("user 🟢", user);
   return next();
 });
 

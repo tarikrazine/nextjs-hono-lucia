@@ -1,31 +1,31 @@
+import { eq } from "drizzle-orm";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { generateId, Scrypt } from "lucia";
 
-import { RegisterSchema } from "@/schemas/registerSchema";
 import { ContextVariables } from "@/services/types";
 import { users } from "@/services/db/schema/users";
 import { lucia } from "@/services/auth";
 import { generateEmailVerificationCode } from "@/lib/generateEmailVerificationCode";
 import { sendVerificationCode } from "@/lib/sendVerificationCode";
+import { LoginSchema } from "@/schemas/loginSchema";
 
 const app = new OpenAPIHono<{ Variables: ContextVariables }>();
 
-const registerRoute = createRoute({
+const loginRoute = createRoute({
   method: "post",
   path: "/",
-  summary: "Register a new user",
-  tags: ["Register"],
-  body: RegisterSchema,
+  summary: "Login users",
+  tags: ["Login"],
+  body: LoginSchema,
   request: {
     body: {
       description: "Request body",
       content: {
         "application/json": {
-          schema: RegisterSchema.openapi("RegisterUser", {
+          schema: LoginSchema.openapi("LoginUser", {
             example: {
               email: "email@example.com",
               password: "password123",
-              passwordConfirmation: "password123",
             },
           }),
         },
@@ -66,35 +66,51 @@ const registerRoute = createRoute({
   },
 });
 
-app.openapi(registerRoute, async (c) => {
+app.openapi(loginRoute, async (c) => {
   const { email, password } = c.req.valid("json");
 
   const db = c.get("db");
 
-  const hashedPassword = await new Scrypt().hash(password);
-  const userId = generateId(15);
-
   try {
-    const [newUser] = await db.insert(users).values({
-      email,
-      hashedPassword,
-      id: userId,
-      emailVerified: false,
-    }).returning({ id: users.id, email: users.email });
-
-    const verificationCode = await generateEmailVerificationCode(
-      newUser.id,
-      newUser.email,
+    const [existingUser] = await db.select().from(users).where(
+      eq(users.email, email),
     );
 
-    console.log(
-      "[REGISTER_ROUTE]: Sending verification code to 🚨",
-      verificationCode,
+    if (!existingUser) {
+      return c.json({ error: "User not found" }, 400);
+    }
+
+    if (!existingUser.emailVerified) {
+      const verificationCode = await generateEmailVerificationCode(
+        existingUser.id,
+        existingUser.email,
+      );
+
+      console.log(
+        "[REGISTER_ROUTE]: Sending verification code to 🚨",
+        verificationCode,
+      );
+
+      // await sendVerificationCode(existingUser.email, verificationCode);
+
+      return c.json(
+        { error: "Email not verified, please verify your email" },
+        400,
+      );
+    }
+
+    const validPassword = await new Scrypt().verify(
+      existingUser.hashedPassword,
+      password,
     );
 
-    // await sendVerificationCode(newUser.email, verificationCode);
+    if (!validPassword) {
+      return c.json({
+        error: "Incorrect username or password",
+      }, 400);
+    }
 
-    const session = await lucia.createSession(newUser.id, {});
+    const session = await lucia.createSession(existingUser.id, {});
 
     const sessionCookie = lucia.createSessionCookie(session.id);
 
@@ -102,9 +118,9 @@ app.openapi(registerRoute, async (c) => {
       append: true,
     });
 
-    return c.json({ success: "User registered successfully" }, 201);
+    return c.json({ success: "User logged in successfully" }, 201);
   } catch (error: any) {
-    console.log("[ERROR_REGISTER_ROUTE]: ", error);
+    console.log("[ERROR_LOGIN_ROUTE]: ", error);
 
     return c.json({ error: error?.message }, 400);
   }

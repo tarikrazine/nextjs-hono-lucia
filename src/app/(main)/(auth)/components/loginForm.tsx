@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -13,26 +15,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { RegisterSchema, RegisterSchemaType } from "@/schemas/registerSchema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
 import { client } from "@/server/client";
-import { useRouter } from "next/navigation";
+import { LoginSchema, LoginSchemaType } from "@/schemas/loginSchema";
 
-function RegisterForm() {
+function LoginForm() {
   const router = useRouter()
   
-  const $post = (client as any).api.auth.register.$post;
+  const $post = (client as any).api.auth.login.$post;
 
   const { mutate, isPending } = useMutation<
     unknown,
     Error,
-    RegisterSchemaType,
+    LoginSchemaType,
     unknown
   >({
-    mutationKey: ["register"],
+    mutationKey: ["login"],
     mutationFn: async (input) => {
       console.log(input);
 
@@ -43,7 +44,7 @@ function RegisterForm() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to register user");
+        throw new Error("Failed to login");
       }
 
       return await response.json();
@@ -52,20 +53,19 @@ function RegisterForm() {
       //   toast.success("Verification code sent");
       console.log("success 🟢: ", email);
       form.reset();
-      router.push("/login")  
+      router.push("/")  
     },
     onError: (error) => {
       //   toast.error("Failed to send verification code");
-      console.log("error 🔴: ", error);
+      console.log("error 🔴: ", error.message);
     },
   });
 
-  const form = useForm<RegisterSchemaType>({
-    resolver: zodResolver(RegisterSchema),
+  const form = useForm<LoginSchemaType>({
+    resolver: zodResolver(LoginSchema),
     defaultValues: {
       email: "",
       password: "",
-      passwordConfirmation: "",
     },
   });
 
@@ -112,24 +112,6 @@ function RegisterForm() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="passwordConfirmation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password Confirmation</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="********"
-                    disabled={isPending}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
         <Button type="submit">
           <Loader2
@@ -138,14 +120,14 @@ function RegisterForm() {
               [`hidden`]: !isPending,
             })}
           />
-          Register
+          Login
         </Button>
       </form>
     </Form>
   );
 }
 
-export default RegisterForm;
+export default LoginForm;
 
 
 
