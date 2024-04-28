@@ -52,7 +52,7 @@ function RegisterForm() {
       //   toast.success("Verification code sent");
       console.log("success 🟢: ", email);
       form.reset();
-      router.push("/login")  
+      router.push("/verify")  
     },
     onError: (error) => {
       //   toast.error("Failed to send verification code");

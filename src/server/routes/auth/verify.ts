@@ -1,31 +1,32 @@
 import { eq } from "drizzle-orm";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { generateId, Scrypt } from "lucia";
+import { getCookie } from "hono/cookie";
+import { Scrypt } from "lucia";
 
 import { ContextVariables } from "@/services/types";
 import { users } from "@/services/db/schema/users";
 import { lucia } from "@/services/auth";
 import { generateEmailVerificationCode } from "@/lib/generateEmailVerificationCode";
 import { sendVerificationCode } from "@/lib/sendVerificationCode";
-import { LoginSchema } from "@/schemas/loginSchema";
+import { VerifySchema } from "@/schemas/verifySchema";
+import { verifyVerificationCode } from "@/lib/verifyVerificationCode";
 
 const app = new OpenAPIHono<{ Variables: ContextVariables }>();
 
-const loginRoute = createRoute({
+const verifyRoute = createRoute({
   method: "post",
   path: "/",
-  summary: "Login users",
-  tags: ["Login"],
-  body: LoginSchema,
+  summary: "Verify user",
+  tags: ["Verify"],
+  body: VerifySchema,
   request: {
     body: {
       description: "Request body",
       content: {
         "application/json": {
-          schema: LoginSchema.openapi("LoginUser", {
+          schema: VerifySchema.openapi("VerifyUser", {
             example: {
-              email: "email@example.com",
-              password: "password123",
+              code: "123456",
             },
           }),
         },
@@ -66,59 +67,48 @@ const loginRoute = createRoute({
   },
 });
 
-app.openapi(loginRoute, async (c) => {
-  const { email, password } = c.req.valid("json");
+app.openapi(verifyRoute, async (c) => {
+  const { code } = c.req.valid("json");
 
   const db = c.get("db");
 
   try {
-    const [existingUser] = await db.select().from(users).where(
-      eq(users.email, email),
+    const sessionId = getCookie(c, lucia.sessionCookieName);
+
+    if (!sessionId) {
+      return c.json({ error: "Invalid session" }, 401);
+    }
+
+    const { user } = await lucia.validateSession(sessionId);
+
+    if (!user) {
+      return c.json({ error: "No user found" }, 401);
+    }
+
+    if (user.emailVerified) {
+      return c.json({ error: "User already verified" }, 400);
+    }
+
+    const validCode = await verifyVerificationCode(user, code);
+
+    if (!validCode) {
+      return c.json({ error: "Invalid verification code" }, 400);
+    }
+
+    await lucia.invalidateUserSessions(user.id);
+
+    await db.update(users).set({ emailVerified: true }).where(
+      eq(users.id, user.id),
     );
 
-    if (!existingUser) {
-      return c.json({ error: "User not found" }, 400);
-    }
-
-    if (!existingUser.emailVerified) {
-      const verificationCode = await generateEmailVerificationCode(
-        existingUser.id,
-        existingUser.email,
-      );
-
-      console.log(
-        "[REGISTER_ROUTE]: Sending verification code to 🚨",
-        verificationCode,
-      );
-
-      await sendVerificationCode(existingUser.email, verificationCode);
-
-      return c.json(
-        { error: "Email not verified, please verify your email" },
-        400,
-      );
-    }
-
-    const validPassword = await new Scrypt().verify(
-      existingUser.hashedPassword,
-      password,
-    );
-
-    if (!validPassword) {
-      return c.json({
-        error: "Incorrect username or password",
-      }, 400);
-    }
-
-    const session = await lucia.createSession(existingUser.id, {});
-
+    const session = await lucia.createSession(user.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
 
     c.header("Set-Cookie", sessionCookie.serialize(), {
       append: true,
     });
 
-    return c.json({ success: "User logged in successfully" }, 201);
+    return c.json({ success: "User verified" }, 201);
   } catch (error: any) {
     console.log("[ERROR_LOGIN_ROUTE]: ", error);
 

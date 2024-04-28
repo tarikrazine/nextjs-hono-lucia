@@ -15,6 +15,7 @@ export async function verifyVerificationCode(
       .where(eq(emailVerificationCode.userId, user.id));
 
     if (!databaseCode || databaseCode.code !== code) {
+      console.log("🚨 Invalid verification code");
       tx.rollback();
       return false;
     }
@@ -24,6 +25,7 @@ export async function verifyVerificationCode(
     );
 
     if (!isWithinExpirationDate(databaseCode.expiresAt)) {
+      console.log("🚨 Expired code");
       return false;
     }
 

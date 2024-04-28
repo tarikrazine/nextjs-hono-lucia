@@ -92,7 +92,7 @@ app.openapi(registerRoute, async (c) => {
       verificationCode,
     );
 
-    // await sendVerificationCode(newUser.email, verificationCode);
+    await sendVerificationCode(newUser.email, verificationCode);
 
     const session = await lucia.createSession(newUser.id, {});
 

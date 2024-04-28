@@ -14,7 +14,7 @@ export async function generateEmailVerificationCode(
     eq(emailVerificationCode.userId, userId),
   );
 
-  const code = generateRandomString(8, alphabet("0-9"));
+  const code = generateRandomString(6, alphabet("0-9", "A-Z"));
 
   const emailVerificationCodeId = generateId(15);
 
