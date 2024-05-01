@@ -20,11 +20,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { client } from "@/server/client";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 function RegisterForm() {
-  const router = useRouter()
-  
-  const $post = (client as any).api.auth.register.$post;
+  const router = useRouter();
+
+  const $post = client.api.auth.register.$post;
 
   const { mutate, isPending } = useMutation<
     unknown,
@@ -34,28 +35,28 @@ function RegisterForm() {
   >({
     mutationKey: ["register"],
     mutationFn: async (input) => {
-      console.log(input);
-
       const response = await $post({
         json: {
           ...input,
         },
       });
+      
+      const data = await response.json() as any
 
-      if (!response.ok) {
-        throw new Error("Failed to register user");
+      if (data.error) {
+        throw new Error(data.error);
       }
 
-      return await response.json();
+      return data;
     },
-    onSuccess: (_, { email }) => {
-      //   toast.success("Verification code sent");
-      console.log("success 🟢: ", email);
+    onSuccess: (data) => {
+      toast.success("Verification code sent");
+      console.log("success 🟢: ", data);
       form.reset();
-      router.push("/verify")  
+      router.push("/verify");
     },
     onError: (error) => {
-      //   toast.error("Failed to send verification code");
+      toast.error(error.message);
       console.log("error 🔴: ", error);
     },
   });
@@ -146,7 +147,3 @@ function RegisterForm() {
 }
 
 export default RegisterForm;
-
-
-
-

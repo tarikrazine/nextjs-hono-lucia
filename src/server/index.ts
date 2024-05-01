@@ -1,14 +1,18 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { logger } from "hono/logger";
-import { getCookie, setCookie } from "hono/cookie";
+import { getCookie } from "hono/cookie";
 import { verifyRequestOrigin } from "lucia";
 
-import authApp from "./routes/auth";
+import { authApp } from "./routes/auth";
 import { lucia } from "@/services/auth";
 import db from "@/services/db";
 import { ContextVariables } from "@/services/types";
 
-const app = new OpenAPIHono<{ Variables: ContextVariables }>().basePath("/api");
+const app = new OpenAPIHono<{ Variables: ContextVariables }>({}).basePath(
+  "/api",
+);
+
+app.use(logger());
 
 app.use("*", async (c, next) => {
   if (c.req.method === "GET") {
@@ -64,10 +68,8 @@ app.use("*", async (c, next) => {
   return next();
 });
 
-app.use(logger());
+const routes = app.route("/auth", authApp);
 
-app.route("/auth", authApp);
-
-export type AppType = typeof app;
+export type AppType = typeof routes;
 
 export default app;

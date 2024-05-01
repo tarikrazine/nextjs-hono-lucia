@@ -26,6 +26,7 @@ import { VerifySchema, VerifySchemaType } from "@/schemas/verifySchema";
 import { client } from "@/server/client";
 import { cn } from "@/lib/utils";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
+import { toast } from "sonner";
 
 function VerifyForm() {
   const router = useRouter();
@@ -37,7 +38,7 @@ function VerifyForm() {
     },
   });
 
-  const $post = (client as any).api.auth.verify.$post;
+  const $post = client.api.auth.verify.$post;
 
   const { mutate, isPending } = useMutation<
     unknown,
@@ -47,7 +48,6 @@ function VerifyForm() {
   >({
     mutationKey: ["verify"],
     mutationFn: async (input) => {
-      console.log(input);
 
       const response = await $post({
         json: {
@@ -55,20 +55,22 @@ function VerifyForm() {
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to verify user");
+      const data = await response.json() as any;
+
+      if (data.error) {
+        throw new Error(data.error);
       }
 
-      return await response.json();
+      return data
     },
-    onSuccess: (_, { code }) => {
-      //   toast.success("Verification code sent");
-      console.log("success 🟢: ", code);
+    onSuccess: (data) => {
+      toast.success("Verification code verified successfully!");
+      console.log("success 🟢: ", data);
       form.reset();
-      router.push("/login");
+      router.push("/");
     },
     onError: (error) => {
-      //   toast.error("Failed to send verification code");
+      toast.error(error.message);
       console.log("error 🔴: ", error);
     },
   });

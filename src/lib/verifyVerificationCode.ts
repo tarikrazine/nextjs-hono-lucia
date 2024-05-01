@@ -16,7 +16,6 @@ export async function verifyVerificationCode(
 
     if (!databaseCode || databaseCode.code !== code) {
       console.log("🚨 Invalid verification code");
-      tx.rollback();
       return false;
     }
 

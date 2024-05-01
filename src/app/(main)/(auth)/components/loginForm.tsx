@@ -21,11 +21,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { client } from "@/server/client";
 import { LoginSchema, LoginSchemaType } from "@/schemas/loginSchema";
+import { toast } from "sonner";
 
 function LoginForm() {
   const router = useRouter()
   
-  const $post = (client as any).api.auth.login.$post;
+  const $post = client.api.auth.login.$post;
 
   const { mutate, isPending } = useMutation<
     unknown,
@@ -43,20 +44,23 @@ function LoginForm() {
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to login");
+      const data = await response.json() as any;
+
+      if (data.error) {
+        throw new Error(data.error);
       }
 
-      return await response.json();
+      return data
+
     },
-    onSuccess: (_, { email }) => {
-      //   toast.success("Verification code sent");
-      console.log("success 🟢: ", email);
+    onSuccess: (data) => {
+      console.log("success 🟢:", data)
+      toast.success("Login successful");
       form.reset();
       router.push("/")  
     },
     onError: (error) => {
-      //   toast.error("Failed to send verification code");
+      toast.error(error.message);
       console.log("error 🔴: ", error.message);
     },
   });
